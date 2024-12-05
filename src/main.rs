@@ -27,8 +27,6 @@ fn main() {
     let count = count + 1;
 
     commit(&count.to_string());
-
-
 }
 
 fn check_is_git_repository() {
