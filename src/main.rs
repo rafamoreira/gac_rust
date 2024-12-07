@@ -1,14 +1,24 @@
 use ::std::process::Command;
+use std::env;
 
 const FATAL_ERROR: &str = "Failed to execute git command";
 
 struct Config {
     check_remote: bool,
+    commit_message: String,
 }
 
 fn main() {
+    let args = get_args();
+    println!("{:?}", args);
+    let commit_message = if let Some(message) = args.get(1) {
+        message
+    } else {
+        ""
+    };
     let config = Config {
         check_remote: false,
+        commit_message: commit_message.to_string(),
     };
     check_is_git_repository();
     if check_if_empty() {
@@ -37,7 +47,20 @@ fn main() {
         .expect("Failed to parse git rev-list output");
     let count = count + 1;
 
-    commit(&count.to_string());
+    let message;
+
+    if config.commit_message.is_empty() {
+        message = count.to_string();
+    } else {
+        message = format!("{} {}", config.commit_message, count);
+    }
+
+    commit(&message);
+}
+
+fn get_args() -> Vec<String> {
+    let args: Vec<String> = env::args().collect();
+    args
 }
 
 fn check_remote() {
