@@ -29,7 +29,10 @@ fn main() {
     }
 
     if config.check_remote {
-        check_remote();
+        if let Err(e) = check_remote() {
+            eprintln!("Failed to check remote repository: {}", e);
+            std::process::exit(1);
+        }
     }
 
     let output = Command::new("git")
@@ -62,14 +65,13 @@ fn get_args() -> Vec<String> {
     args
 }
 
-fn check_remote() {
-    let output = Command::new("git")
-        .arg("remote")
-        .output()
-        .expect(FATAL_ERROR);
+fn check_remote() -> Result<(), std::io::Error> {
+    let output = Command::new("git").arg("remote").output()?;
     if !output.status.success() {
-        eprintln!("Failed to check if there is a remote repository");
-        std::process::exit(1);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Failed to check if there is a remote repository",
+        ));
     }
 
     let remote_list = String::from_utf8(output.stdout).expect("Failed to parse git remote output");
@@ -104,6 +106,8 @@ fn check_remote() {
         eprintln!("Failed to pull the remote repository");
         std::process::exit(1);
     }
+
+    Ok(())
 }
 
 fn check_is_git_repository() {
@@ -183,4 +187,3 @@ fn check_if_clean() -> bool {
         .expect("Failed to parse git status output")
         .is_empty()
 }
-
