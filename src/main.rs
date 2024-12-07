@@ -51,7 +51,7 @@ fn main() {
     if config.commit_message.is_empty() {
         message = count.to_string();
     } else {
-        message = format!("{}: {}", count, config.commit_message);
+        message = format!("{} - {}", count, config.commit_message);
     }
 
     commit(&message);
