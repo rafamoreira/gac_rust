@@ -8,7 +8,7 @@ GAC simplifies the git commit process by automatically staging all changes and
 creating commits with sequential numbers as messages. It's designed for personal 
 projects where detailed commit messages aren't critical.
 
-## ⚠️ Important Limitations
+## Important Limitations
 
 This tool is **not** recommended for:
 - Team projects
