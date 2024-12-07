@@ -2,7 +2,14 @@ use ::std::process::Command;
 
 const FATAL_ERROR: &str = "Failed to execute git command";
 
+struct Config {
+    check_remote: bool,
+}
+
 fn main() {
+    let config = Config {
+        check_remote: false,
+    };
     check_is_git_repository();
     if check_if_empty() {
         create_initial_commit();
@@ -10,6 +17,10 @@ fn main() {
     if check_if_clean() {
         eprintln!("Repository is clean, nothing to do");
         std::process::exit(0);
+    }
+
+    if config.check_remote {
+        check_remote();
     }
 
     let output = Command::new("git")
@@ -29,6 +40,50 @@ fn main() {
     commit(&count.to_string());
 }
 
+fn check_remote() {
+    let output = Command::new("git")
+        .arg("remote")
+        .output()
+        .expect(FATAL_ERROR);
+    if !output.status.success() {
+        eprintln!("Failed to check if there is a remote repository");
+        std::process::exit(1);
+    }
+
+    let remote_list = String::from_utf8(output.stdout).expect("Failed to parse git remote output");
+
+    let remote_list = remote_list.split("\n").collect::<Vec<&str>>();
+
+    if remote_list.is_empty() {
+        eprintln!("No remote repository found");
+        std::process::exit(1);
+    }
+
+    let found_origin = remote_list.iter().any(|&x| x == "origin");
+
+    if !found_origin {
+        eprintln!("No remote repository found, check the settings, or add one");
+        std::process::exit(1);
+    }
+
+    let output = Command::new("git")
+        .arg("fetch")
+        .output()
+        .expect(FATAL_ERROR);
+
+    if !output.status.success() {
+        eprintln!("Failed to fetch the remote repository");
+        std::process::exit(1);
+    }
+
+    let output = Command::new("git").arg("pull").output().expect(FATAL_ERROR);
+
+    if !output.status.success() {
+        eprintln!("Failed to pull the remote repository");
+        std::process::exit(1);
+    }
+}
+
 fn check_is_git_repository() {
     let output = Command::new("git")
         .arg("rev-parse")
@@ -43,10 +98,16 @@ fn check_is_git_repository() {
 }
 
 fn check_if_empty() -> bool {
-    let command = Command::new("git").arg("count-objects").output().expect(FATAL_ERROR);
-    let output = String::from_utf8(command.stdout)
+    let command = Command::new("git")
+        .arg("count-objects")
+        .output()
+        .expect(FATAL_ERROR);
+    let output =
+        String::from_utf8(command.stdout).expect("Failed to parse git count-objects output");
+    let count = output
+        .split_whitespace()
+        .next()
         .expect("Failed to parse git count-objects output");
-    let count = output.split_whitespace().next().expect("Failed to parse git count-objects output");
 
     count == "0"
 }
@@ -96,5 +157,8 @@ fn check_if_clean() -> bool {
         std::process::exit(1);
     }
 
-    String::from_utf8(output.stdout).expect("Failed to parse git status output").is_empty()
+    String::from_utf8(output.stdout)
+        .expect("Failed to parse git status output")
+        .is_empty()
 }
+
