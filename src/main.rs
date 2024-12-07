@@ -158,7 +158,7 @@ fn check_if_empty() -> bool {
 fn git_add_all() {
     let output = Command::new("git")
         .arg("add")
-        .arg("--all")
+        .arg(".")
         .output()
         .expect(FATAL_ERROR);
 
