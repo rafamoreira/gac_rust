@@ -10,7 +10,6 @@ struct Config {
 
 fn main() {
     let args = get_args();
-    println!("{:?}", args);
     let commit_message = if let Some(message) = args.get(1) {
         message
     } else {
